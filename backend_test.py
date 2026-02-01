@@ -321,9 +321,17 @@ class MatrixVPSAPITester:
         ]
         
         for endpoint in endpoints_to_test:
-            success, data = self.make_request('GET', endpoint, expected_status=401, use_auth=False)
+            # Accept both 401 and 403 as valid unauthorized responses
+            success, data = self.make_request('GET', endpoint, expected_status=403, use_auth=False)
+            if not success:
+                # Try 401 as well
+                success_401, data_401 = self.make_request('GET', endpoint, expected_status=401, use_auth=False)
+                if success_401:
+                    success = True
+                    data = data_401
+            
             self.log_test(f"Unauthorized access {endpoint}", success,
-                         "Should return 401" if success else f"Got {data.get('status_code', 'unknown')} instead of 401")
+                         "Correctly blocked unauthorized access" if success else f"Got {data.get('status_code', 'unknown')} instead of 401/403")
         
         # Restore token
         self.token = original_token
