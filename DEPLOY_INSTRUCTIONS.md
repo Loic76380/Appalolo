@@ -132,106 +132,6 @@ git branch -M main
 git push -u origin main
 ```
 
-### Étape 6: Service Systemd pour le Backend
-
-Créer `/etc/systemd/system/vps-monitor-backend.service`:
-
-```ini
-[Unit]
-Description=VPS Monitor Backend API
-After=network.target mongodb.service
-
-[Service]
-Type=simple
-User=root
-WorkingDirectory=/opt/vps-monitor/backend
-Environment="PATH=/opt/vps-monitor/backend/venv/bin"
-ExecStart=/opt/vps-monitor/backend/venv/bin/uvicorn server:app --host 0.0.0.0 --port 8001
-Restart=always
-RestartSec=5
-
-[Install]
-WantedBy=multi-user.target
-```
-
-Démarrer le service:
-
-```bash
-systemctl daemon-reload
-systemctl enable vps-monitor-backend
-systemctl start vps-monitor-backend
-systemctl status vps-monitor-backend
-```
-
----
-
-## 🔧 Configuration de l'Agent de Monitoring (Optionnel)
-
-Si vous voulez des métriques réelles au lieu de données simulées:
-
-### Installer l'agent sur le VPS
-
-```bash
-# Copier l'agent
-cp /opt/vps-monitor/scripts/vps-monitor-agent.py /opt/vps-monitor/agent/
-
-# Installer psutil
-pip3 install psutil requests
-
-# Créer le service
-cat > /etc/systemd/system/vps-monitor-agent.service << 'EOF'
-[Unit]
-Description=VPS Monitor Agent
-After=network.target
-
-[Service]
-Type=simple
-ExecStart=/usr/bin/python3 /opt/vps-monitor/agent/vps-monitor-agent.py
-Restart=always
-RestartSec=10
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
-# Démarrer l'agent
-systemctl daemon-reload
-systemctl enable vps-monitor-agent
-systemctl start vps-monitor-agent
-```
-
----
-
-## 🔐 Sécurité
-
-### Pare-feu (UFW)
-
-```bash
-# Autoriser le port de l'application (si accès direct)
-ufw allow 80/tcp
-ufw allow 443/tcp
-```
-
-### HTTPS avec Certbot (Recommandé)
-
-```bash
-# Installer Certbot
-apt install certbot python3-certbot-nginx
-
-# Obtenir un certificat
-certbot --nginx -d monitor.votre-domaine.com
-```
-
----
-
-## ✅ Vérification
-
-1. Accédez à `http://51.210.242.96/` (ou votre domaine)
-2. Connectez-vous avec:
-   - Email: `loicchampanay@gmail.com`
-   - Mot de passe: `Pixel76380*`
-3. Vérifiez que le dashboard affiche les métriques
-
 ---
 
 ## 📝 Mise à jour de l'application
@@ -239,30 +139,31 @@ certbot --nginx -d monitor.votre-domaine.com
 ```bash
 cd /opt/vps-monitor
 git pull origin main
-
-# Rebuild frontend si nécessaire
 cd frontend && yarn install && yarn build
-
-# Redémarrer le backend
-systemctl restart vps-monitor-backend
+systemctl restart vps-monitor
 ```
 
 ---
 
 ## 🐛 Dépannage
 
-### Voir les logs du backend
 ```bash
-journalctl -u vps-monitor-backend -f
-```
+# Logs backend
+journalctl -u vps-monitor -f
 
-### Voir les logs Nginx
-```bash
+# Logs Nginx
 tail -f /var/log/nginx/error.log
+
+# Status des services
+systemctl status vps-monitor nginx mongodb
 ```
 
-### Vérifier MongoDB
-```bash
-systemctl status mongodb
-mongo --eval "db.stats()"
-```
+---
+
+## ✅ Vérification
+
+1. Accédez à `https://appalolo.fr`
+2. Connectez-vous avec:
+   - Email: `loicchampanay@gmail.com`
+   - Mot de passe: `Pixel76380*`
+3. Le dashboard Matrix devrait s'afficher avec les métriques
