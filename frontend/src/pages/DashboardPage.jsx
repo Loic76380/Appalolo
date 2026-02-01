@@ -353,8 +353,8 @@ export default function DashboardPage() {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {processes.slice(0, 10).map((proc) => (
-                                        <tr key={proc.pid}>
+                                    {processes.slice(0, 10).map((proc, index) => (
+                                        <tr key={`${proc.pid}-${index}`}>
                                             <td>{proc.pid}</td>
                                             <td>{proc.name}</td>
                                             <td>{proc.user}</td>
