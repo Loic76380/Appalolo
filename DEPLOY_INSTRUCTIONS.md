@@ -1,4 +1,5 @@
 # Instructions de Déploiement - Matrix VPS Monitor
+# Domaine: appalolo.fr
 
 ## 📁 Structure sur le VPS
 
@@ -17,103 +18,47 @@ L'application sera installée dans `/opt/vps-monitor/` pour respecter l'arboresc
 
 ---
 
-## 🚀 Commandes Git pour pousser sur GitHub
+## 🚀 Commandes complètes pour déployer sur le VPS
 
-### 1. Initialiser le repository (si pas déjà fait)
-
-```bash
-# Sur votre machine locale ou le serveur de développement
-cd /app
-
-# Initialiser Git
-git init
-
-# Ajouter le remote GitHub
-git remote add origin https://github.com/Loic76380/vps-monitor.git
-
-# Ajouter tous les fichiers
-git add .
-
-# Commit initial
-git commit -m "Initial commit - Matrix VPS Monitor"
-
-# Pousser sur GitHub
-git branch -M main
-git push -u origin main
-```
-
-### 2. Pour les mises à jour futures
+### Copier et coller ces commandes sur le VPS (51.210.242.96):
 
 ```bash
-git add .
-git commit -m "Description des modifications"
-git push origin main
-```
-
----
-
-## 📦 Déploiement sur le VPS OVH (51.210.242.96)
-
-### Étape 1: Connexion au VPS
-
-```bash
-ssh root@51.210.242.96
-```
-
-### Étape 2: Créer le répertoire et cloner
-
-```bash
-# Créer le répertoire
-mkdir -p /opt/vps-monitor
-
-# Cloner depuis GitHub
+# === ÉTAPE 1: Cloner depuis GitHub ===
 cd /opt
 git clone https://github.com/Loic76380/vps-monitor.git
 cd vps-monitor
-```
 
-### Étape 3: Configuration Backend
-
-```bash
-# Créer l'environnement virtuel Python
+# === ÉTAPE 2: Configuration Backend ===
 cd /opt/vps-monitor/backend
 python3 -m venv venv
 source venv/bin/activate
-
-# Installer les dépendances
-pip install -r requirements.txt
+pip install fastapi uvicorn motor pymongo bcrypt pyjwt python-dotenv email-validator
 
 # Créer le fichier .env
 cat > .env << 'EOF'
 MONGO_URL="mongodb://localhost:27017"
 DB_NAME="vps_monitor"
-JWT_SECRET="votre-secret-jwt-secure-ici"
-CORS_ORIGINS="*"
+JWT_SECRET="matrix-vps-appalolo-secret-2024"
+CORS_ORIGINS="https://appalolo.fr,http://appalolo.fr"
 EOF
-```
 
-### Étape 4: Configuration Frontend
-
-```bash
+# === ÉTAPE 3: Configuration Frontend ===
 cd /opt/vps-monitor/frontend
 
-# Installer les dépendances
-yarn install
+# Créer le fichier .env pour la production
+cat > .env << 'EOF'
+REACT_APP_BACKEND_URL=https://appalolo.fr
+EOF
 
-# Build pour production
+# Installer et builder
+yarn install
 yarn build
 
-# Le build sera dans /opt/vps-monitor/frontend/build/
-```
-
-### Étape 5: Configuration Nginx
-
-Créer le fichier `/etc/nginx/sites-available/vps-monitor`:
-
-```nginx
+# === ÉTAPE 4: Configuration Nginx ===
+cat > /etc/nginx/sites-available/appalolo << 'EOF'
 server {
     listen 80;
-    server_name monitor.votre-domaine.com;  # ou utilisez l'IP
+    server_name appalolo.fr www.appalolo.fr;
 
     # Frontend React
     location / {
@@ -134,14 +79,57 @@ server {
         proxy_cache_bypass $http_upgrade;
     }
 }
+EOF
+
+# Activer le site
+ln -sf /etc/nginx/sites-available/appalolo /etc/nginx/sites-enabled/
+nginx -t && systemctl reload nginx
+
+# === ÉTAPE 5: Service Systemd Backend ===
+cat > /etc/systemd/system/vps-monitor.service << 'EOF'
+[Unit]
+Description=VPS Monitor Backend API
+After=network.target mongodb.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/vps-monitor/backend
+Environment="PATH=/opt/vps-monitor/backend/venv/bin"
+ExecStart=/opt/vps-monitor/backend/venv/bin/uvicorn server:app --host 127.0.0.1 --port 8001
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+# Démarrer le service
+systemctl daemon-reload
+systemctl enable vps-monitor
+systemctl start vps-monitor
+
+# === ÉTAPE 6: HTTPS avec Certbot ===
+certbot --nginx -d appalolo.fr -d www.appalolo.fr
+
+# === VÉRIFICATION ===
+systemctl status vps-monitor
+curl -s http://localhost:8001/api/ 
+echo "✅ Application déployée sur https://appalolo.fr"
 ```
 
-Activer le site:
+---
+
+## 📝 Commandes Git (à exécuter sur votre machine de dev)
 
 ```bash
-ln -s /etc/nginx/sites-available/vps-monitor /etc/nginx/sites-enabled/
-nginx -t
-systemctl reload nginx
+cd /app
+git init
+git remote add origin https://github.com/Loic76380/vps-monitor.git
+git add .
+git commit -m "Matrix VPS Monitor - appalolo.fr"
+git branch -M main
+git push -u origin main
 ```
 
 ### Étape 6: Service Systemd pour le Backend
