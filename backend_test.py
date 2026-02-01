@@ -89,9 +89,27 @@ class MatrixVPSAPITester:
         """Test user registration"""
         print("\n🔍 Testing User Registration...")
         
-        # Generate unique test email
+        # First try to register the provided user
+        success, data = self.make_request('POST', '/auth/register', {
+            "email": "loicchampanay@gmail.com",
+            "password": "Pixel76380*"
+        }, expected_status=200)
+        
+        if success:
+            self.token = data.get('access_token')
+            self.user_data = data.get('user')
+            self.log_test("User registration (provided credentials)", True, f"User ID: {self.user_data.get('id', 'N/A')}")
+            return
+        else:
+            # If user already exists, that's expected
+            if "already registered" in str(data.get('detail', '')).lower():
+                self.log_test("User registration (provided credentials)", True, "User already exists - expected")
+            else:
+                self.log_test("User registration (provided credentials)", False, data.get('detail', data.get('error', 'Unknown error')))
+        
+        # Try with a test email using valid domain
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        test_email = f"test_user_{timestamp}@matrix.test"
+        test_email = f"test_user_{timestamp}@example.com"
         test_password = "TestMatrix123!"
         
         success, data = self.make_request('POST', '/auth/register', {
@@ -102,9 +120,9 @@ class MatrixVPSAPITester:
         if success:
             self.token = data.get('access_token')
             self.user_data = data.get('user')
-            self.log_test("User registration", True, f"User ID: {self.user_data.get('id', 'N/A')}")
+            self.log_test("User registration (test user)", True, f"User ID: {self.user_data.get('id', 'N/A')}")
         else:
-            self.log_test("User registration", False, data.get('detail', data.get('error', 'Unknown error')))
+            self.log_test("User registration (test user)", False, data.get('detail', data.get('error', 'Unknown error')))
 
     def test_user_login(self):
         """Test user login with provided credentials"""
