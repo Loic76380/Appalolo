@@ -1,34 +1,230 @@
-.App-logo {
-    height: 40vmin;
-    pointer-events: none;
+/* Matrix Rain Canvas */
+.matrix-rain-canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    opacity: 0.8;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-    .App-logo {
-        animation: App-logo-spin infinite 20s linear;
-    }
-}
-
-.App-header {
-    background-color: #0f0f10;
+/* Login container */
+.login-container {
+    position: relative;
+    z-index: 10;
     min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Dashboard Layout */
+.dashboard-layout {
+    display: grid;
+    grid-template-columns: 64px 1fr;
+    min-height: 100vh;
+}
+
+.dashboard-sidebar {
+    background: var(--matrix-surface);
+    border-right: 1px solid var(--matrix-border);
     display: flex;
     flex-direction: column;
     align-items: center;
+    padding: 1rem 0;
+    gap: 0.5rem;
+}
+
+.dashboard-main {
+    padding: 1rem;
+    overflow-y: auto;
+    height: 100vh;
+}
+
+/* Metric Cards Grid */
+.metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1rem;
+}
+
+/* Gauge Component */
+.gauge-container {
+    position: relative;
+    width: 120px;
+    height: 120px;
+}
+
+.gauge-svg {
+    transform: rotate(-90deg);
+}
+
+.gauge-bg {
+    fill: none;
+    stroke: var(--matrix-border);
+    stroke-width: 8;
+}
+
+.gauge-fill {
+    fill: none;
+    stroke: var(--matrix-green);
+    stroke-width: 8;
+    stroke-linecap: square;
+    transition: stroke-dashoffset 0.5s ease;
+}
+
+.gauge-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+}
+
+/* Chart container */
+.chart-container {
+    height: 200px;
+    width: 100%;
+}
+
+/* Header */
+.dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--matrix-border);
+}
+
+/* Sidebar icon button */
+.sidebar-icon {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
     justify-content: center;
-    font-size: calc(10px + 2vmin);
-    color: white;
+    color: var(--matrix-dark);
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: color 0.1s, border-color 0.1s;
 }
 
-.App-link {
-    color: #61dafb;
+.sidebar-icon:hover,
+.sidebar-icon.active {
+    color: var(--matrix-green);
+    border-color: var(--matrix-border);
 }
 
-@keyframes App-logo-spin {
-    from {
-        transform: rotate(0deg);
+/* Settings panel */
+.settings-panel {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 320px;
+    height: 100vh;
+    background: var(--matrix-surface);
+    border-left: 1px solid var(--matrix-border);
+    padding: 1.5rem;
+    z-index: 50;
+    transform: translateX(100%);
+    transition: transform 0.2s ease;
+}
+
+.settings-panel.open {
+    transform: translateX(0);
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+    .dashboard-layout {
+        grid-template-columns: 1fr;
     }
-    to {
-        transform: rotate(360deg);
+
+    .dashboard-sidebar {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        flex-direction: row;
+        justify-content: space-around;
+        padding: 0.5rem;
+        z-index: 40;
+        border-right: none;
+        border-top: 1px solid var(--matrix-border);
     }
+
+    .dashboard-main {
+        padding-bottom: 80px;
+    }
+
+    .metrics-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Bento grid layout for dense mode */
+.bento-grid {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 1px;
+    background: var(--matrix-border);
+}
+
+.bento-grid > * {
+    background: var(--matrix-bg);
+}
+
+.bento-span-3 { grid-column: span 3; }
+.bento-span-4 { grid-column: span 4; }
+.bento-span-6 { grid-column: span 6; }
+.bento-span-8 { grid-column: span 8; }
+.bento-span-12 { grid-column: span 12; }
+
+@media (max-width: 1024px) {
+    .bento-span-3,
+    .bento-span-4 { grid-column: span 6; }
+    .bento-span-6,
+    .bento-span-8 { grid-column: span 12; }
+}
+
+@media (max-width: 640px) {
+    .bento-span-3,
+    .bento-span-4,
+    .bento-span-6,
+    .bento-span-8 { grid-column: span 12; }
+}
+
+/* VPS Status indicator */
+.vps-status {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.vps-status-indicator {
+    width: 10px;
+    height: 10px;
+    background: var(--matrix-green);
+    box-shadow: 0 0 10px var(--matrix-green);
+    animation: pulse-green 2s infinite;
+}
+
+/* Navbar link */
+.nav-item {
+    padding: 0.5rem 1rem;
+    color: var(--matrix-dark);
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.15em;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: color 0.1s, border-color 0.1s;
+}
+
+.nav-item:hover,
+.nav-item.active {
+    color: var(--matrix-green);
+    border-color: var(--matrix-border);
 }
