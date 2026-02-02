@@ -1,9 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { 
     Monitor, Cpu, HardDrive, Network, Activity, 
-    Settings, LogOut, Server, Package, RefreshCw,
+    Settings, Server, Package, RefreshCw,
     MemoryStick, Clock, Layers
 } from 'lucide-react';
 import { Gauge } from '../components/Gauge';
@@ -12,7 +11,6 @@ import { AreaChart, Area, XAxis, YAxis, ResponsiveContainer, Tooltip } from 'rec
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 export default function DashboardPage() {
-    const navigate = useNavigate();
     const [metrics, setMetrics] = useState(null);
     const [history, setHistory] = useState([]);
     const [processes, setProcesses] = useState([]);
@@ -24,22 +22,16 @@ export default function DashboardPage() {
     const [loading, setLoading] = useState(true);
     const [lastUpdate, setLastUpdate] = useState(new Date());
 
-    const token = localStorage.getItem('token');
-
-    const axiosConfig = {
-        headers: { Authorization: `Bearer ${token}` }
-    };
-
     const fetchData = useCallback(async () => {
         try {
             const [metricsRes, historyRes, processesRes, servicesRes, appsRes, vpsRes, prefsRes] = await Promise.all([
-                axios.get(`${API}/metrics/current`, axiosConfig),
-                axios.get(`${API}/metrics/history?hours=1`, axiosConfig),
-                axios.get(`${API}/processes`, axiosConfig),
-                axios.get(`${API}/services`, axiosConfig),
-                axios.get(`${API}/apps`, axiosConfig),
-                axios.get(`${API}/vps/info`, axiosConfig),
-                axios.get(`${API}/preferences`, axiosConfig),
+                axios.get(`${API}/metrics/current`),
+                axios.get(`${API}/metrics/history?hours=1`),
+                axios.get(`${API}/processes`),
+                axios.get(`${API}/services`),
+                axios.get(`${API}/apps`),
+                axios.get(`${API}/vps/info`),
+                axios.get(`${API}/preferences`),
             ]);
 
             setMetrics(metricsRes.data);
@@ -52,28 +44,16 @@ export default function DashboardPage() {
             setLastUpdate(new Date());
             setLoading(false);
         } catch (err) {
-            if (err.response?.status === 401) {
-                localStorage.removeItem('token');
-                navigate('/');
-            }
+            console.error('Error fetching data:', err);
+            setLoading(false);
         }
-    }, [navigate, token]);
+    }, []);
 
     useEffect(() => {
-        if (!token) {
-            navigate('/');
-            return;
-        }
         fetchData();
         const interval = setInterval(fetchData, 5000);
         return () => clearInterval(interval);
-    }, [fetchData, navigate, token]);
-
-    const handleLogout = () => {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        navigate('/');
-    };
+    }, [fetchData]);
 
     const togglePreference = async (metricId) => {
         const newPrefs = preferences.map(p => 
@@ -84,7 +64,7 @@ export default function DashboardPage() {
         try {
             await axios.put(`${API}/preferences`, {
                 preferences: [{ metric_id: metricId, enabled: !preferences.find(p => p.id === metricId)?.enabled }]
-            }, axiosConfig);
+            });
         } catch (err) {
             console.error('Failed to update preferences');
         }
@@ -134,14 +114,6 @@ export default function DashboardPage() {
                     data-testid="settings-button"
                 >
                     <Settings className="w-5 h-5" />
-                </div>
-                <div 
-                    className="sidebar-icon" 
-                    title="Déconnexion"
-                    onClick={handleLogout}
-                    data-testid="logout-button"
-                >
-                    <LogOut className="w-5 h-5" />
                 </div>
             </div>
 
